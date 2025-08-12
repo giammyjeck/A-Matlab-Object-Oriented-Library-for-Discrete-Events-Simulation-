@@ -1,0 +1,151 @@
+@startuml
+abstract class Entity {
+  - name: char       
+  - state: struct
+  - type: char
+  - eventHandlers:  containers.Map 
+  - info: struct 
+  - intialState: struct 
+  
+  + Entity(name, type, initialState, Info)
+  + getState(): struct
+  + setConfig(config: struct): void
+  + resetState(): void
+  + registerHandler(eventName: char, funcHandle: function_handle): void
+  + handleEvent(event: Events): void
+}
+
+
+class Events {
+  - name: char   
+  - time: double 
+  - data: struct    
+  - target: Entity  
+  
+  + Events(name, time, data, target)
+}
+
+class EventsList {
+  - entities: cell
+  - eventQueue: cell    
+  - eventHistory: cell   
+  - eventCounters:  containers.Map 
+  - initial: cell
+
+  + EventsList(entities, initialEvents)
+  + reset(): void
+  + isFinished(): bool
+  + getNextEvent(): (eventObj: Events, time: double)
+  + addEvent(eventObj: Events): void
+  + plotHistory(): void
+  + plotTimeline(tMin: double, tMax: double): void
+
+  
+  # orderEvents(events: Events[]): Events[] 
+}
+
+
+class ResourceBasedEntity {
+  - capacity
+  - busy
+  
+  + ResourceBasedEntity(name, capacity, initialState, info)
+  + allocate(amount: double, index): bool
+  + release(amount: double, index): void
+  + isAvailable(amount: double, index): bool
+  + freeResources(index)
+  + resetState(): void
+}
+
+class TransactionBasedEntity {
+  - queue: cell
+  
+  + TransactionBasedEntity(name, initialState, info)
+  + enqueue(data: any): void
+  + dequeue(): any
+  + queueLength(): double
+  + isQueueEmpty(): bool
+  + resetState(): void
+}
+
+
+class SimulatorManager {
+  - eventList: EventsList  
+  - scenarioGenerator: ScenarioGenerator 
+  - statistics: Statistics
+  - currentScenario: double
+  
+  + SimulatorManager(eventList, scenarioGenerator, statistics, scenarioCount)
+  + StartSimulation(): void
+
+  # setConfig(newParams: struct): void
+  # resetEntitiesStates(): void
+}
+
+class Statistics {
+  - queueLengths: struct  
+  - waitTimes: struct  
+  - serviceTimes: struct  
+  - resourceArea: struct  
+  - eventLog: cell  
+  - contatori: struct 
+  - stopFlag: logical   
+  - stopThreshold: struct 
+  
+  + Statistics(initialStopThreshould)
+  + reset(initialStopThreshould): void
+  + record(name: char): void
+  + recordQueueLength(entityName: char, time: double, length: double): void
+  + recordWaitTime(entityName: char, waitTime: double): void
+  + recordServiceTime(entityName: char, serviceTime: double): void
+  + recordResourceUsage(entityName: char, time: double, busyStruct: struct): void
+  + recordEvent(time: double, description: char): void
+
+  + computeAverageQueueLength(entityName: char): double
+  + computeAverageWaitTime(entityName: char): double
+  + computeAverageServiceTime(entityName: char): double
+  + computeUtilization(entityName: char, capacity: struct): double
+
+  + collectSummary(): array
+  + computeConfInt(data: matrix): [means: double, ci: double]
+  + writeScenarioSummary(ScenarioParams: struct, means: double, ci: double, filename: char)
+  + writeHeaderSummary(ScenarioParams: struct, rep: double, s: double, filename: char)
+  + displayReport(): void
+}
+
+
+class ScenarioGenerator {
+  - repForScenarios: double
+  - timeHorizon: double 
+  - currentConfig: struct
+  - baseConfig: struct
+  - values: containers.Map
+  - dimsLevels double
+  
+  + ScenarioGenerator(intialConfig, rep, time, values)
+  + numScenarios(): double
+  + obtainScenario(n:double): struct
+  + getSeasonalRate(baseRate:double, clockTime: double): double
+}
+
+
+
+
+Entity -- ResourceBasedEntity
+Entity -- TransactionBasedEntity
+
+SimulatorManager::statistics <-- Statistics
+SimulatorManager::eventList <-- EventsList
+SimulatorManager::scenarioGenerator <--left-- ScenarioGenerator
+
+
+EventsList::eventQueue <--left-- Events
+EventsList::entities <--right-- Entity
+
+Entity::handleEvent <..up.. Events::target : "Gestito da"
+
+
+@enduml
+
+
+//www.plantuml.com/plantuml/png/bLTRRzis57xtho3Q5nbp_GE4FJGhagP0qgrnYZqKnN1C7TlSA58ZAIVkiFy-NdH4NUm4AufOF9UFv7SkHtfl7HZNrd81M-iCSCUu16lPjNB2dTW_2yRUCGKrbemVmB3qBqgzg_DYxzPo5oNkr7HsSOb7LEuML2NHs98nhfK3eVnYVGzD0X5gfmc394w0t10uAVp_dxfJ5U4ygxZRofiBilUhJnvk6KttwAAiM19A55jq7xJQYNt1umyflTLHYohQ6BJaF1RlXNLekXiLyNgVUsfMRDSgdfHbV7P2gpyEKJ34IPBhu9qmIXONbep-NImMAGf9VYuAYMyH99LkjnAJf087FMkz6HZFHaan9JOxT69J-B_HVzKvBCD1XkUu4zPrPy409T3wyw2KETfVMcmn2RljAGsyhpOdKWqq7tIhtCK4eVXs6z6vkzCKT8uLsNLCvZYEGYZiZRUp1wo2UAkrf5pvZCyk-WP52iklspyfCgiHrGaTgYegPyR33HkfwUh5LFxe8QLGMBXxeGZRxtGFpxGYbnInjqoR2atQ9MrhQTDltvVvaGrIw06jRWt7Ny1YDQfg3WrmluoBRMjFb1Tp5oevSfcMdUZB3gJKF5GEr26k-Lf2LVWy9DsWHB0N3OT1kpg2aE2rhwFk32ATtnP9VQ6eSte_6b0MOhtEQVexfpGHDBFF75rc1bL4AbA9WZeDxrXXKYwZ9egYu0xLtXs2EDsu8oIMsNNTk1FbyUKxqYKtecubE6tkGS4UJRWUrM2efN9GLzJXEIemGdz4XIQubcmp5ULPuFq4jzwaVqvfrXhZSScHRa9SJezLz0TQpVTV3JRAwjX1bWajZBCEKcZLqn2h9_T-XK-_WO7Qpjl_syJYTTTO8fjsdZBvaZbDA5o4IZG-WOZ5FfLRD4V1yPpAT2byPH0cgiIFtgUKJCBKEPqsWemfBBgvaU1jfTuB3juyAnuF1kr1osesPlFb2ihcRD_AQb1Hvmt6OvDhKnLvUisLNmQfZh6MybWTjzuLaz6CrdEitpkopm1H72uxRt94vluKhvSXgFbyjR37rsuJs-ucaaz1c2EcAJFsgz1o8vgGusDIen_NTTCwl3gYWJs-n6vkB7C_Ol9_ESqOVCtlgnDI_8ZLEdF80uVOoH0TXfJ8tQQjQqWJ5eo1qn0_LFmdvRgsMuCp8WoCRpM2ifbGBkZvU_H-Ci8XzIp2f_MuTwpO32i_xuJ4GUfdx5k42irho0QRZ6LVXgs4RIIS7h3Hniq7mAnrqmJmUzneGzf-a_uDyrORyKChahDXLq_zTFGHi0MBPyH7a2tQSlAE5rMLgEqT7b7QoMoOdRX87mS9Fh93Bwu9FX6XsfeyxMHqwctOdBI5AgcCwQZqwO1WjGBv46Pfk55uAFi0Iyt_6hK1UeXqBnRT2yIxT-VUfRBsmel4OZ4TYcLfyxpvsJiEPkpSjf-WqJHFzNEmKuQ3YyIT2tjCTVvY6Qmiyml_m2aPZEswKHgiZDWVWXbTDFsMPVucyeTUhzjclUwWoZ9zZR2IlVc8rfjhLi6RnNjKLLlB_m00
